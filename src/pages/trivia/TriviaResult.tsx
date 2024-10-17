@@ -1,4 +1,3 @@
-import waitingSvg from "@/assets/waiting.svg";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery } from "convex/react";
@@ -16,7 +15,6 @@ export default function TriviaGameResult() {
   if (!gameData) {
     return (
       <div className="grow flex items-center justify-center flex-col">
-        <img src={waitingSvg} className="w-96" />
         <div className="text-3xl font-bold mt-8">Loading...</div>
       </div>
     );
