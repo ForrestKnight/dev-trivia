@@ -1,19 +1,10 @@
 import { useQuery } from "convex/react";
-import { useState } from 'react';
 import CountUp from "react-countup";
-import { Link } from "react-router-dom";
 import { api } from "../convex/_generated/api";
-import CountdownTimer, { GameStatus } from "./components/Countdown";
-import useStoreUser from "./hooks/useStoreUser";
+import CountdownTimer from "./components/Countdown";
 
 export default function App() {
-  const userId = useStoreUser();
   const recentLeaderboard = useQuery(api.triviaGames.getMostRecentGameLeaderboard);
-  const [gameStatus, setGameStatus] = useState<GameStatus>('not started');
-
-  const handleGameStatusChange = (status: GameStatus) => {
-    setGameStatus(status);
-  };
 
   return (
     <div className="grow container mx-auto p-8 flex flex-col">
@@ -27,7 +18,7 @@ export default function App() {
       </div>
       
       <div className="gap-4 mb-4">
-        <CountdownTimer onGameStatusChange={handleGameStatusChange} />
+        <CountdownTimer />
         <p className="text-xl mt-4 mb-2 stretch-min tracking-tight font-bold">
           --- How It Works ---
         </p>

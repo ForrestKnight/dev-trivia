@@ -21,7 +21,7 @@ export const sendMessage = mutation({
 
 export const getMessages = query({
   args: { gameId: v.id('triviaGames') },
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
     return await ctx.db
       .query('chatMessages')
       .order('desc')

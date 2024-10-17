@@ -1,7 +1,7 @@
 import { InlineCountdown } from '@/components/Countdown';
 import { useUser } from '@clerk/clerk-react';
 import { useMutation, useQuery } from "convex/react";
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";

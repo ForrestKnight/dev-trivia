@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@clerk/clerk-react';
 import { useMutation, useQuery } from 'convex/react';
-import { RegExpMatcher, TextCensor, englishDataset, englishRecommendedTransformers } from 'obscenity';
+import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity';
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../../convex/_generated/api';
 
@@ -10,7 +10,6 @@ const matcher = new RegExpMatcher({
   ...englishDataset.build(),
   ...englishRecommendedTransformers,
 });
-const censor = new TextCensor();
 
 export const Chat: React.FC = () => {
   const { user } = useUser();

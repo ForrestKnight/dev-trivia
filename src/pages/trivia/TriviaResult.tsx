@@ -22,11 +22,10 @@ export default function TriviaGameResult() {
     );
   }
 
-  const { game, participants } = gameData;
+  const { participants } = gameData;
 
   // Sort participants by score in descending order
   const sortedParticipants = [...participants].sort((a, b) => b.score - a.score);
-  const winner = sortedParticipants[0];
 
   return (
     <div className="grow container mx-auto p-8 flex flex-col text-xl">
@@ -34,8 +33,6 @@ export default function TriviaGameResult() {
         <div className="font-bold text-palette-yellow my-4">
           Game Over
         </div>
-        {/* <div className="font-bold">--- Winner ---</div>
-        <div className="font-bold text-palette-yellow">{winner.name}</div> */}
         <div className="mt-6">
           <p className="font-bold mb-2">--- Leaderboard ---</p>
           {sortedParticipants.map((participant, index) => (
