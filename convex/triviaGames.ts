@@ -1,6 +1,7 @@
 import { v } from "convex/values";
-import { triviaQuestions } from '../questions.config';
 import { mutation, query } from "./_generated/server";
+import { triviaQuestions } from './triviaQuestions';
+import { TriviaQuestion } from './types';
 
 // Only Forrest can create a game
 export const createTriviaGame = mutation({
@@ -20,9 +21,8 @@ export const createTriviaGame = mutation({
       throw new Error("Not authorized to create a game");
     }
 
-    // Create some sample questions
     const questionIds = await Promise.all(
-      triviaQuestions.map(question => ctx.db.insert("triviaQuestions", question))
+      triviaQuestions.map((question: TriviaQuestion) => ctx.db.insert("triviaQuestions", question))
     );
 
     const gameId = await ctx.db.insert("triviaGames", {
