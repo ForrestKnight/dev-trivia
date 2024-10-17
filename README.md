@@ -1,6 +1,6 @@
 # Dev Trivia
 
-This project is a developer trivia application built with Vite, React, Tailwind CSS, TypeScript, and Convex.
+This project is a live, weekly developer trivia application built with Vite, React, Tailwind CSS, TypeScript, and Convex.
 
 ## Prerequisites
 
