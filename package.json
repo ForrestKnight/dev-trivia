@@ -10,7 +10,8 @@
     "predev": "convex dev --until-success && convex dashboard",
     "build": "tsc && vite build",
     "lint": "tsc && eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-questions-env": "node generate-questions-env.mjs"
   },
   "dependencies": {
     "@clerk/clerk-react": "^4.25.2",

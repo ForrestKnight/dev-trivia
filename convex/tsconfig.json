@@ -19,6 +19,6 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["./**/*"],
+  "include": ["./**/*", "../questions.config.ts"],
   "exclude": ["./_generated"]
 }
