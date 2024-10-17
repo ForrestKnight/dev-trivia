@@ -1,29 +1,43 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Read the questions.config.ts file
-const questionsConfigPath = join(__dirname, 'questions.config.ts');
-const questionsConfigContent = readFileSync(questionsConfigPath, 'utf8');
+console.log('Starting generate-questions-env script');
 
-// Extract the array from the file content
-const questionsArrayMatch = questionsConfigContent.match(/export const triviaQuestions = (\[[\s\S]*?\]);/);
+try {
+  let triviaQuestionsJson;
 
-if (questionsArrayMatch && questionsArrayMatch[1]) {
-  const questionsArray = eval(questionsArrayMatch[1]);
-  
-  // Convert the array to a JSON string
-  const questionsJson = JSON.stringify(questionsArray);
-  
-  // Create or update the .env file
-  const envContent = `TRIVIA_QUESTIONS='${questionsJson}'`;
+  // Check if questions.config.ts exists (local environment)
+  const questionsConfigPath = join(__dirname, 'questions.config.ts');
+  if (existsSync(questionsConfigPath)) {
+    console.log('questions.config.ts found, reading questions from file');
+    const questionsConfigContent = readFileSync(questionsConfigPath, 'utf8');
+    const match = questionsConfigContent.match(/export const triviaQuestions = (\[[\s\S]*?\]);/);
+    
+    if (match && match[1]) {
+      triviaQuestionsJson = JSON.stringify(eval(match[1]));
+    } else {
+      throw new Error('Failed to extract triviaQuestions from questions.config.ts');
+    }
+  } 
+  // Check if TRIVIA_QUESTIONS environment variable exists (Vercel environment)
+  else if (process.env.TRIVIA_QUESTIONS) {
+    console.log('TRIVIA_QUESTIONS environment variable found');
+    triviaQuestionsJson = process.env.TRIVIA_QUESTIONS;
+  } 
+  else {
+    throw new Error('Neither questions.config.ts nor TRIVIA_QUESTIONS environment variable found');
+  }
+
+  // Create or update the .env file with the questions
+  const envContent = `TRIVIA_QUESTIONS='${triviaQuestionsJson}'`;
   writeFileSync('.env', envContent);
   
   console.log('Successfully generated .env file with TRIVIA_QUESTIONS');
-} else {
-  console.error('Failed to extract questions array from questions.config.ts');
+} catch (error) {
+  console.error('Error generating TRIVIA_QUESTIONS:', error);
   process.exit(1);
 }
