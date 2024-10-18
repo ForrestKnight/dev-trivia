@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background -->
+  <rect width="64" height="64" rx="8" ry="8" fill="#211D1B" />
+  
+  <!-- Terminal window frame -->
+  <rect x="4" y="4" width="56" height="56" rx="4" ry="4" fill="#2A2624" />
+  
+  <!-- Larger, softer angled '>' prompt -->
+  <path d="M14 20 C20 26, 26 30, 32 32 C26 34, 20 38, 14 44 L18 44 C24 38, 30 34, 36 32 C30 30, 24 26, 18 20 Z" fill="#519975" />
+  
+  <!-- Larger underscore cursor -->
+  <rect x="38" y="44" width="12" height="3" fill="#DCDCCC">
+    <animate attributeName="opacity" values="1;0;1" dur="1.2s" repeatCount="indefinite" />
+  </rect>
+</svg>
