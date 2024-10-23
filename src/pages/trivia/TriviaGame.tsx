@@ -139,12 +139,12 @@ export default function TriviaGame() {
         <h2 className="font-bold mb-4">--- Question {gameData.game.currentQuestionIndex + 1} ---</h2>
         <p>{currentQuestion.questionText}</p>
       </div>
-      <div className="mb-2">
+      <div className="grid grid-cols-1 gap-2 mb-4">
         {(['A', 'B', 'C', 'D'] as const).map((choice) => (
           <Button
             key={choice}
             onClick={() => handleSelectAnswer(choice)}
-            className={`mr-2 mb-2 p-4 
+            className={`w-full whitespace-normal flex items-center min-h-[60px] p-4 text-sm sm:text-xl
               ${selectedAnswer === choice ? 'bg-palette-blue' : 'bg-palette-offwhite'}
               ${isAnswerSubmitted || isReviewPhase ? 'opacity-50 cursor-not-allowed' : ''}
               ${showCorrectAnswer && choice === currentQuestion.correctChoice ? 'bg-green-500' : ''}
