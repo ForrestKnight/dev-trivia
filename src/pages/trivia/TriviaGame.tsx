@@ -8,7 +8,7 @@ import { Button } from "../../components/ui/button";
 export default function TriviaGame() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(20);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
@@ -40,7 +40,7 @@ export default function TriviaGame() {
   }, [gameData, navigate, id]);
 
   useEffect(() => {
-    setTimeLeft(10);
+    setTimeLeft(20);
     setSelectedAnswer(null);
     setIsAnswerSubmitted(false);
     setIsAnswerCorrect(null);
@@ -84,7 +84,7 @@ export default function TriviaGame() {
       } else {
         await moveToNextQuestion({ gameId: id as Id<"triviaGames"> });
         setIsReviewPhase(false);
-        setTimeLeft(10);
+        setTimeLeft(20);
       }
     } catch (error) {
       console.error("Error in handleTimeUp:", error);

@@ -1,4 +1,5 @@
 import { ClerkProvider, useAuth } from "@clerk/clerk-react";
+import { Analytics } from "@vercel/analytics/react";
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import React from "react";
@@ -69,6 +70,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       >
         <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
           <UserContextProvider>
+            <Analytics />
             <RouterProvider router={router} />
           </UserContextProvider>
         </ConvexProviderWithClerk>
