@@ -1,6 +1,6 @@
 import { v } from "convex/values";
+import { triviaQuestions } from '../questions.config';
 import { mutation, query } from "./_generated/server";
-import { triviaQuestions } from './triviaQuestions';
 import { TriviaQuestion } from './types';
 
 // Only Forrest can create a game
@@ -33,6 +33,8 @@ export const createTriviaGame = mutation({
       currentQuestionIndex: 0,
       triviaQuestionIds: questionIds,
       weekNumber: Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)),
+      questionStartedAt: 0,
+      isInReviewPhase: false,
     });
 
     await ctx.db.insert("triviaParticipants", {
@@ -132,6 +134,7 @@ export const getTriviaGame = query({
 export const startTriviaGame = mutation({
   args: { gameId: v.id("triviaGames") },
   handler: async (ctx, args) => {
+    
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Not authenticated");
@@ -160,16 +163,49 @@ export const startTriviaGame = mutation({
     }
 
     const startDateTime = new Date();
-    const endDateTime = new Date(startDateTime.getTime() + 10 * 10 * 1000); // 10 questions, 10 seconds each
+    const endDateTime = new Date(startDateTime.getTime() + game.triviaQuestionIds.length * (20 + 3) * 1000); // amount of questions, 20 seconds each, 3 second review phase
 
     await ctx.db.patch(args.gameId, {
       status: "in_progress",
       startDateTime: startDateTime.toISOString(),
       endDateTime: endDateTime.toISOString(),
+      questionStartedAt: Date.now(),
+      isInReviewPhase: false,
     });
     return { success: true, gameId: args.gameId };
   },
 });
+
+export const moveToReviewPhase = mutation({
+  args: { gameId: v.id("triviaGames") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", q => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    const game = await ctx.db.get(args.gameId);
+    if (!game || game.status !== "in_progress") {
+      throw new Error("Game is not in progress");
+    }
+
+    if (!user || user._id !== game.hostUserId) {
+      throw new Error("Only host can move to next question");
+    }
+
+    await ctx.db.patch(args.gameId, {
+      isInReviewPhase: true,
+      questionStartedAt: Date.now(),
+    })
+
+    return { success: true };
+  }
+})
 
 export const submitAnswer = mutation({
   args: {
@@ -256,9 +292,22 @@ export const submitAnswer = mutation({
 export const moveToNextQuestion = mutation({
   args: { gameId: v.id("triviaGames") },
   handler: async (ctx, args) => {
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", q => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
     const game = await ctx.db.get(args.gameId);
     if (!game || game.status !== "in_progress") {
       throw new Error("Game is not in progress");
+    }
+
+    if (!user || user._id !== game.hostUserId) {
+      throw new Error("Only host can move to next question");
     }
 
     const nextQuestionIndex = game.currentQuestionIndex + 1;
@@ -273,6 +322,8 @@ export const moveToNextQuestion = mutation({
 
     await ctx.db.patch(args.gameId, {
       currentQuestionIndex: nextQuestionIndex,
+      questionStartedAt: Date.now(),
+      isInReviewPhase: false,
     });
 
     return { success: true, newQuestionIndex: nextQuestionIndex };

@@ -30,6 +30,8 @@ export default defineSchema({
     currentQuestionIndex: v.number(),
     triviaQuestionIds: v.array(v.id("triviaQuestions")),
     weekNumber: v.number(),
+    questionStartedAt: v.number(),
+    isInReviewPhase: v.boolean(),
   }).index("by_status", ["status"]),
 
   triviaParticipants: defineTable({

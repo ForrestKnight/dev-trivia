@@ -8,21 +8,33 @@ import { Button } from "../../components/ui/button";
 export default function TriviaGame() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [timeLeft, setTimeLeft] = useState(20);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
-  const [isReviewPhase, setIsReviewPhase] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isHandlingTimeUp = useRef(false);
+  const [displayTime, setDisplayTime] = useState(20);
 
   const gameData = useQuery(api.triviaGames.getTriviaGame, 
     id ? { gameId: id as Id<"triviaGames"> } : "skip"
   );
   const submitAnswer = useMutation(api.triviaGames.submitAnswer);
   const moveToNextQuestion = useMutation(api.triviaGames.moveToNextQuestion);
+  const moveToReviewPhase = useMutation(api.triviaGames.moveToReviewPhase);
+
+  const calculateTimeLeft = () => {
+    if (!gameData?.game?.questionStartedAt) return 20;
+
+    const now = Date.now();
+    const elapsed = (now - gameData.game.questionStartedAt) / 1000;
+
+    if (gameData.game.isInReviewPhase) {
+      return Math.max(0, 3 - elapsed);
+    }
+    return Math.max(0, 20 - elapsed);
+  }
+
+  const timeLeft = calculateTimeLeft();
+  const isHost = gameData?.game?.hostUserId === import.meta.env.VITE_CREATOR_USER_ID;
 
   useEffect(() => {
     if (!id) {
@@ -32,66 +44,50 @@ export default function TriviaGame() {
 
   useEffect(() => {
     if (gameData?.game?.status === "waiting") {
-      navigate('/trivia-lobby');
+        navigate('/trivia-lobby'); 
     }
     if (gameData?.game?.status === "finished") {
-      navigate(`/trivia-game/result/${id}`);
+        navigate(`/trivia-game/result/${id}`);
     }
-  }, [gameData, navigate, id]);
+  }, [gameData?.game?.status, navigate, id]);
 
   useEffect(() => {
-    setTimeLeft(20);
     setSelectedAnswer(null);
     setIsAnswerSubmitted(false);
     setIsAnswerCorrect(null);
-    setShowCorrectAnswer(false);
-    setIsReviewPhase(false);
-    isHandlingTimeUp.current = false;
-
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
   }, [gameData?.game?.currentQuestionIndex]);
 
   useEffect(() => {
-    if (timeLeft > 0) {
-      timeoutRef.current = setTimeout(() => {
-        setTimeLeft(prevTime => prevTime - 1);
-      }, 1000);
-    } else if (!isHandlingTimeUp.current) {
-      handleTimeUp();
-    }
+    const intervalId = setInterval(() => {
+      const timeLeft = calculateTimeLeft();
+      setDisplayTime(Math.ceil(timeLeft));
+    }, 100);
 
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [timeLeft]);
+    return () => clearInterval(intervalId);
+  }, [gameData?.game?.questionStartedAt, gameData?.game?.isInReviewPhase, calculateTimeLeft])
 
-  const handleTimeUp = async () => {
-    if (isHandlingTimeUp.current) return;
-    isHandlingTimeUp.current = true;
+  useEffect(() => {
+    if (!isHost) return;
 
-    try {
-      if (!isReviewPhase) {
-        if (!isAnswerSubmitted) {
-          await handleSubmitAnswer();
+    const timeLeft = calculateTimeLeft();
+
+    const handleTimeUp = async () => {
+      if (timeLeft > 0) return;
+
+      try {
+        if (!gameData?.game?.isInReviewPhase) {
+          await moveToReviewPhase({ gameId: id as Id<"triviaGames"> });
+        } else {
+          await moveToNextQuestion({ gameId: id as Id<"triviaGames"> });
         }
-        setIsReviewPhase(true);
-        setShowCorrectAnswer(true);
-        setTimeLeft(3);
-      } else {
-        await moveToNextQuestion({ gameId: id as Id<"triviaGames"> });
-        setIsReviewPhase(false);
-        setTimeLeft(20);
+      } catch (error) {
+        console.error("Error handling time up:", error);        
       }
-    } catch (error) {
-      console.error("Error in handleTimeUp:", error);
-    } finally {
-      isHandlingTimeUp.current = false;
     }
-  };
+
+    handleTimeUp();
+    
+  }, [timeLeft, gameData?.game?.isInReviewPhase, isHost, moveToReviewPhase, id, moveToNextQuestion, calculateTimeLeft]);
 
   const handleSubmitAnswer = async () => {
     if (selectedAnswer && id && !isAnswerSubmitted && currentQuestion?._id) {
@@ -113,7 +109,7 @@ export default function TriviaGame() {
   };
 
   const handleSelectAnswer = (choice: string) => {
-    if (!isAnswerSubmitted && !isReviewPhase) {
+    if (!isAnswerSubmitted && !gameData?.game?.isInReviewPhase) {
       setSelectedAnswer(choice);
     }
   };
@@ -146,11 +142,11 @@ export default function TriviaGame() {
             onClick={() => handleSelectAnswer(choice)}
             className={`w-full whitespace-normal flex items-center min-h-[60px] p-4 text-sm sm:text-xl
               ${selectedAnswer === choice ? 'bg-palette-blue' : 'bg-palette-offwhite'}
-              ${isAnswerSubmitted || isReviewPhase ? 'opacity-50 cursor-not-allowed' : ''}
-              ${showCorrectAnswer && choice === currentQuestion.correctChoice ? 'bg-green-500' : ''}
+              ${isAnswerSubmitted || gameData?.game?.isInReviewPhase ? 'opacity-50 cursor-not-allowed' : ''}
+              ${gameData?.game?.isInReviewPhase && choice === currentQuestion.correctChoice ? 'bg-green-500' : ''}
               ${isAnswerSubmitted && selectedAnswer === choice && selectedAnswer !== currentQuestion.correctChoice ? 'bg-red-500' : ''}
             `}
-            disabled={isAnswerSubmitted || isReviewPhase}
+            disabled={isAnswerSubmitted || gameData?.game?.isInReviewPhase}
           >
             {currentQuestion[`choice${choice}` as keyof typeof currentQuestion]}
           </Button>
@@ -158,18 +154,18 @@ export default function TriviaGame() {
       </div>
       <Button 
         onClick={handleSubmitAnswer} 
-        disabled={!selectedAnswer || isAnswerSubmitted || isReviewPhase}
-        className={`p-6 bg-palette-offwhite ${isAnswerSubmitted || isReviewPhase ? 'opacity-50 cursor-not-allowed' : ''}`}
+        disabled={!selectedAnswer || isAnswerSubmitted || gameData?.game?.isInReviewPhase}
+        className={`p-6 bg-palette-offwhite ${isAnswerSubmitted || gameData?.game?.isInReviewPhase ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         Submit Answer
       </Button>
-      <div className="mt-4">Time left: {timeLeft} seconds</div>
-      {isAnswerSubmitted && !isReviewPhase && (
+      <div className="mt-4">Time left: {displayTime} seconds</div>
+      {isAnswerSubmitted && !gameData?.game?.isInReviewPhase && (
         <div className={`mt-4 font-bold ${isAnswerCorrect ? 'text-green-500' : 'text-red-500'}`}>
           {isAnswerCorrect ? 'Correct!' : 'Incorrect'}
         </div>
       )}
-      {isReviewPhase && (
+      {gameData?.game?.isInReviewPhase && (
         <div className="mt-4 font-bold text-green-500">
           Correct Answer: {currentQuestion[`choice${currentQuestion.correctChoice}` as keyof typeof currentQuestion]}
         </div>
