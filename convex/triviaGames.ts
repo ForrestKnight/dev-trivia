@@ -270,7 +270,7 @@ export const submitAnswer = mutation({
     }
 
     const isCorrect = question.correctChoice === args.answer;
-    const pointsEarned = isCorrect ? args.timeRemaining : 0;
+    const pointsEarned = isCorrect ? Math.round(args.timeRemaining) : 0;
 
     await ctx.db.patch(participant._id, {
       score: (participant.score || 0) + pointsEarned,
