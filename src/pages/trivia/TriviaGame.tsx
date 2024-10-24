@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "convex/react";
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -21,7 +21,7 @@ export default function TriviaGame() {
   const moveToNextQuestion = useMutation(api.triviaGames.moveToNextQuestion);
   const moveToReviewPhase = useMutation(api.triviaGames.moveToReviewPhase);
 
-  const calculateTimeLeft = () => {
+  const calculateTimeLeft = useCallback(() => {
     if (!gameData?.game?.questionStartedAt) return 20;
 
     const now = Date.now();
@@ -31,7 +31,7 @@ export default function TriviaGame() {
       return Math.max(0, 3 - elapsed);
     }
     return Math.max(0, 20 - elapsed);
-  }
+  }, [gameData?.game?.questionStartedAt, gameData?.game?.isInReviewPhase]);
 
   const timeLeft = calculateTimeLeft();
   const isHost = gameData?.game?.hostUserId === import.meta.env.VITE_CREATOR_USER_ID;

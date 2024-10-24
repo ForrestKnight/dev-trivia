@@ -14,8 +14,8 @@ export type GameStatus = 'live' | 'about to start' | 'not started';
 export function getNextWednesdayNoonET(): Date {
   const now = new Date();
   const nextWednesday = new Date(now);
-  nextWednesday.setDate(now.getDate() + ((3 - now.getDay() + 7) % 7));
-  nextWednesday.setUTCHours(16, 0, 0, 0);  // Set to noon ET (16:00 UTC)
+  nextWednesday.setDate(now.getDate() + ((3 - now.getDay() + 2) % 7));
+  nextWednesday.setUTCHours(-5, 0, 0, 0);  // Set to noon ET (16:00 UTC)
   
   // If it's already past this Wednesday noon, get next Wednesday
   if (nextWednesday <= now) {

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { triviaQuestions } from '../questions.config';
 import { mutation, query } from "./_generated/server";
+import { triviaQuestions } from './triviaQuestions';
 import { TriviaQuestion } from './types';
 
 // Only Forrest can create a game
