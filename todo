@@ -1,0 +1,8 @@
+- Make in-game leaderboard rearrange in descending order after each question (highlight current user)
+- Make chat work on leaderboard page (works in dev, not in prod)
+- Figure out why 404 error occurs on refresh in lobby & game in prod
+- Allow users to join late
+- Create a page containing archived games with questions, players, and results
+- Make game start automatically at specific time (right now, I manually start it)
+   - And make moveToNextQuestion & moveToReviewPhase work without me (must be implemented at the same time as auto start)
+- Considering increasing time per question to 25-30 seconds (will need more data)
