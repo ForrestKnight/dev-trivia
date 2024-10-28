@@ -23,7 +23,7 @@ export default function App() {
           --- How It Works ---
         </p>
         <p className="text-xl leading-5 tracking-tight">
-          Dev Trivia is a weekly, live trivia game. All players will be asked the same question at the same time and given 10 seconds to answer it. Every correct answer scores points based on how much time is left in the round - the quicker you answer (correctly), the more points you get. Climb the leaderboard, compete with fellow developers, and have a good time doing it!
+          Dev Trivia is a weekly, live trivia game. All players will be asked the same question at the same time and given 20 seconds to answer it. Every correct answer scores points based on how much time is left in the round - the quicker you answer (correctly), the more points you get. Climb the leadserboard, compete with fellow developers, and have a good time doing it!
         </p>
       </div>
       <div className="gap-4 mb-4">

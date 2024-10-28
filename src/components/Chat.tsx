@@ -68,7 +68,7 @@ export const Chat: React.FC = () => {
     return (now - timestamp) / 1000 / 60; // age in minutes
   };
 
-  const filteredMessages = messages?.filter(msg => getMessageAge(msg._creationTime) < 5) || [];
+  const filteredMessages = messages?.filter(msg => getMessageAge(msg._creationTime) < 30) || [];
 
   return (
     <div className="flex flex-col h-[50vh] p-4">
