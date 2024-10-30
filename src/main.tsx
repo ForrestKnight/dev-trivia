@@ -67,6 +67,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <ErrorBoundary>
       <ClerkProvider
         publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
+        afterSignInUrl="/"
+        afterSignUpUrl="/"
       >
         <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
           <UserContextProvider>
