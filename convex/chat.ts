@@ -3,7 +3,6 @@ import { mutation, query } from './_generated/server';
 
 export const sendMessage = mutation({
   args: {
-    gameId: v.id('triviaGames'),
     userId: v.string(),
     username: v.string(),
     content: v.string(),
@@ -20,10 +19,12 @@ export const sendMessage = mutation({
 });
 
 export const getMessages = query({
-  args: { gameId: v.id('triviaGames') },
+  args: {},
   handler: async (ctx) => {
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
     return await ctx.db
       .query('chatMessages')
+      .filter(q => q.gt(q.field('timestamp'), thirtyMinutesAgo))
       .order('desc')
       .take(50);
   },

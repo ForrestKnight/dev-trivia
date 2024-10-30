@@ -17,8 +17,7 @@ export const Chat: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const currentGame = useQuery(api.triviaGames.getCurrentGame);
-  const messages = useQuery(api.chat.getMessages, currentGame ? { gameId: currentGame } : "skip");
+  const messages = useQuery(api.chat.getMessages);
   const sendMessage = useMutation(api.chat.sendMessage);
 
   useEffect(() => {
@@ -42,7 +41,7 @@ export const Chat: React.FC = () => {
   }, [error]);
 
   const handleSendMessage = async () => {
-    if (message.trim() && user && currentGame) {
+    if (message.trim() && user) {
       const trimmedMessage = message.trim();
       const matches = matcher.getAllMatches(trimmedMessage);
       
@@ -54,7 +53,6 @@ export const Chat: React.FC = () => {
       const username = user.username || user.firstName || user.id.slice(0, 8);
 
       await sendMessage({
-        gameId: currentGame,
         userId: user.id,
         username,
         content: message.trim(),
@@ -63,12 +61,7 @@ export const Chat: React.FC = () => {
     }
   };
 
-  const getMessageAge = (timestamp: number) => {
-    const now = Date.now();
-    return (now - timestamp) / 1000 / 60; // age in minutes
-  };
-
-  const filteredMessages = messages?.filter(msg => getMessageAge(msg._creationTime) < 30) || [];
+  const filteredMessages = messages || [];
 
   return (
     <div className="flex flex-col h-[50vh] p-4">
