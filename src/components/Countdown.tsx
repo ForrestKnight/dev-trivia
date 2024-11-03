@@ -11,29 +11,37 @@ interface TimeLeft {
 
 export type GameStatus = 'live' | 'about to start' | 'not started';
 
-export function getNextWednesdayNoonET(): Date {
+export function getNextTriviaGameDate(): Date {
   const now = new Date();
-  const nextWednesday = new Date(now);
-  nextWednesday.setDate(now.getDate() + ((3 - now.getDay() + 7) % 7));
-  nextWednesday.setUTCHours(16, 0, 0, 0);  // Set to noon ET (16:00 UTC)
-  
-  // If it's already past this Wednesday noon, get next Wednesday
-  if (nextWednesday <= now) {
-    nextWednesday.setDate(nextWednesday.getDate() + 7);
+  const nextTriviaGameDate = new Date(now);
+  // Used to set when the trivia game is played
+  const dayOfTheWeek = 3; // Set to Wednesday
+  const UTCHour = 16; // Set to noon ET (16:00 UTC)
+  const UTCMinute = 0;
+  const UTCSecond = 0;
+  const UTCMillisecond = 0;
+  nextTriviaGameDate.setDate(now.getDate() + Math.abs(dayOfTheWeek - now.getDay()));
+  nextTriviaGameDate.setUTCHours(UTCHour, UTCMinute, UTCSecond, UTCMillisecond);
+
+  // If it's already past this trivia game date, get next week's trivia game date
+  if (nextTriviaGameDate <= now) {
+    nextTriviaGameDate.setDate(nextTriviaGameDate.getDate() + 7);
   }
-  
-  return nextWednesday;
+  return nextTriviaGameDate;
+
+
 }
 
 export function getGameStatus(): GameStatus {
   const now = new Date();
-  const nextWednesday = getNextWednesdayNoonET();
-  const difference = +nextWednesday - +now;
+  const nextTriviaGame = getNextTriviaGameDate();
+  const difference = +nextTriviaGame - +now;
   const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  const thirtyMinutes = 30 * 60 * 1000;
 
-  if (difference > 0 && difference <= 1800000) {
+  if (difference > 0 && difference <= thirtyMinutes) {
     return "about to start";
-  } else if (difference >= sevenDays - 1800000) {
+  } else if (difference >= sevenDays - thirtyMinutes) {
     return "live";
   } else {
     return "not started";
@@ -42,8 +50,8 @@ export function getGameStatus(): GameStatus {
 
 export function calculateTimeLeft(): TimeLeft {
   const now = new Date();
-  const nextWednesday = getNextWednesdayNoonET();
-  const difference = +nextWednesday - +now;
+  const nextTriviaGame = getNextTriviaGameDate();
+  const difference = +nextTriviaGame - +now;
 
   const days = Math.floor(difference / (1000 * 60 * 60 * 24));
   const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
