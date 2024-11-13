@@ -1,7 +1,7 @@
 import { useQuery } from "convex/react";
 import CountUp from "react-countup";
 import { api } from "../convex/_generated/api";
-import CountdownTimer from "./components/Countdown";
+// import CountdownTimer from "./components/Countdown";
 
 export default function App() {
   const recentLeaderboard = useQuery(api.triviaGames.getMostRecentGameLeaderboard);
