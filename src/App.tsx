@@ -18,7 +18,16 @@ export default function App() {
       </div>
       
       <div className="gap-4 mb-4">
-        <CountdownTimer />
+        {/* <CountdownTimer /> */}
+        <div className="mb-4 flex flex-col">
+          <div className="mb-2 text-xl font-semibold">--- Next game starts in ---</div>
+          <div className="w-fit border-2 border-white text-white px-6 py-3">
+            <div className="flex items-center space-x-1">
+              <div className="text-2xl font-bold self-start">December</div>
+            </div>
+          </div>
+          <div className="text-xs italic self-start mt-2">I'm sorry, I'm just way too busy this month! - Forrest</div>
+        </div>
         <p className="text-xl mt-4 mb-2 stretch-min tracking-tight font-bold">
           --- How It Works ---
         </p>
