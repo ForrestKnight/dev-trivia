@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "../../components/ui/button";
+import { TRIVIA_GAME_TIMING } from "../../constants";
 
 export default function TriviaGame() {
   const { id } = useParams<{ id: string }>();
@@ -12,7 +13,7 @@ export default function TriviaGame() {
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [displayTime, setDisplayTime] = useState(20);
+  const [displayTime, setDisplayTime] = useState(TRIVIA_GAME_TIMING.QUESTION_DURATION);
 
   const gameData = useQuery(api.triviaGames.getTriviaGame, 
     id ? { gameId: id as Id<"triviaGames"> } : "skip"
@@ -22,15 +23,15 @@ export default function TriviaGame() {
   const moveToReviewPhase = useMutation(api.triviaGames.moveToReviewPhase);
 
   const calculateTimeLeft = useCallback(() => {
-    if (!gameData?.game?.questionStartedAt) return 20;
+    if (!gameData?.game?.questionStartedAt) return TRIVIA_GAME_TIMING.QUESTION_DURATION;
 
     const now = Date.now();
     const elapsed = (now - gameData.game.questionStartedAt) / 1000;
 
     if (gameData.game.isInReviewPhase) {
-      return Math.max(0, 3 - elapsed);
+      return Math.max(0, TRIVIA_GAME_TIMING.REVIEW_DURATION - elapsed);
     }
-    return Math.max(0, 20 - elapsed);
+    return Math.max(0, TRIVIA_GAME_TIMING.QUESTION_DURATION - elapsed);
   }, [gameData?.game?.questionStartedAt, gameData?.game?.isInReviewPhase]);
 
   const timeLeft = calculateTimeLeft();
@@ -61,10 +62,10 @@ export default function TriviaGame() {
     const intervalId = setInterval(() => {
       const timeLeft = calculateTimeLeft();
       setDisplayTime(Math.ceil(timeLeft));
-    }, 100);
+    }, TRIVIA_GAME_TIMING.TIMER_UPDATE_INTERVAL);
 
     return () => clearInterval(intervalId);
-  }, [gameData?.game?.questionStartedAt, gameData?.game?.isInReviewPhase, calculateTimeLeft])
+  }, [calculateTimeLeft])
 
   useEffect(() => {
     if (!isHost) return;
@@ -81,11 +82,11 @@ export default function TriviaGame() {
           await moveToNextQuestion({ gameId: id as Id<"triviaGames"> });
         }
       } catch (error) {
-        console.error("Error handling time up:", error);        
+        console.error("Error handling time up:", error);
       }
     }
 
-    handleTimeUp();
+    void handleTimeUp();
     
   }, [timeLeft, gameData?.game?.isInReviewPhase, isHost, moveToReviewPhase, id, moveToNextQuestion, calculateTimeLeft]);
 
@@ -106,6 +107,10 @@ export default function TriviaGame() {
         setError("Failed to submit answer. Please try again.");
       }
     }
+  };
+
+  const handleSubmitClick = () => {
+    void handleSubmitAnswer();
   };
 
   const handleSelectAnswer = (choice: string) => {
@@ -152,10 +157,11 @@ export default function TriviaGame() {
           </Button>
         ))}
       </div>
-      <Button 
-        onClick={handleSubmitAnswer} 
+      <Button
+        onClick={handleSubmitClick}
         disabled={!selectedAnswer || isAnswerSubmitted || gameData?.game?.isInReviewPhase}
         className={`p-6 bg-palette-offwhite ${isAnswerSubmitted || gameData?.game?.isInReviewPhase ? 'opacity-50 cursor-not-allowed' : ''}`}
+        aria-label={`Submit answer ${selectedAnswer || ''}`}
       >
         Submit Answer
       </Button>
