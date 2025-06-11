@@ -1,6 +1,6 @@
 import { v } from "convex/values";
+import { triviaQuestions } from '../questions.config';
 import { mutation, query } from "./_generated/server";
-import { triviaQuestions } from './triviaQuestions';
 import { TriviaQuestion } from './types';
 
 // Only Forrest can create a game
@@ -340,9 +340,9 @@ export const getLeaderboard = query({
 
     const leaderboard = await Promise.all(
       participants.map(async participant => {
-        const user = await ctx.db.get(participant.userId);
+        const user = participant.userId ? await ctx.db.get(participant.userId) : null;
         return {
-          name: user?.name,
+          name: user?.name || participant.name,
           score: participant.score,
         };
       })
@@ -355,29 +355,241 @@ export const getLeaderboard = query({
 export const getMostRecentGameLeaderboard = query({
   args: {},
   handler: async (ctx) => {
-    const mostRecentGame = await ctx.db
-      .query("triviaGames")
-      .filter((q) => q.eq(q.field("status"), "finished"))
-      .order("desc")
-      .first();
+    // Get all finished games and their participants for a global leaderboard
+    const allParticipants = await ctx.db
+      .query("triviaParticipants")
+      .collect();
 
-    if (!mostRecentGame) {
+    // Filter participants from finished games only
+    const finishedGameParticipants = [];
+    for (const participant of allParticipants) {
+      const game = await ctx.db.get(participant.gameId);
+      if (game && game.status === "finished") {
+        finishedGameParticipants.push(participant);
+      }
+    }
+
+    if (finishedGameParticipants.length === 0) {
       return null;
     }
 
-    const participants = await ctx.db
-      .query("triviaParticipants")
-      .withIndex("by_game", (q) => q.eq("gameId", mostRecentGame._id))
-      .collect();
-
-    const leaderboard = participants
+    const leaderboard = finishedGameParticipants
       .map((participant) => ({
         name: participant.name,
         score: participant.score,
+        gameId: participant.gameId,
       }))
       .sort((a, b) => b.score - a.score);
 
     return leaderboard;
+  },
+});
+
+// Generate random anonymous player names
+function generateAnonymousName(): string {
+  const adjectives = [
+    "Swift", "Clever", "Ninja", "Cyber", "Digital", "Code", "Binary", "Quantum",
+    "Pixel", "Logic", "Stealth", "Turbo", "Elite", "Prime", "Alpha", "Beta",
+    "Gamma", "Delta", "Omega", "Neon", "Chrome", "Shadow", "Ghost", "Phantom",
+    "Mystic", "Cosmic", "Atomic", "Electric", "Magnetic", "Sonic", "Hyper",
+    "Ultra", "Mega", "Super", "Blazing", "Lightning", "Thunder", "Storm"
+  ];
+
+  const nouns = [
+    "Coder", "Hacker", "Developer", "Programmer", "Engineer", "Architect", "Wizard",
+    "Ninja", "Warrior", "Guardian", "Hunter", "Ranger", "Scout", "Agent", "Operative",
+    "Pilot", "Captain", "Commander", "Chief", "Master", "Expert", "Guru", "Sage",
+    "Phoenix", "Dragon", "Tiger", "Wolf", "Eagle", "Falcon", "Hawk", "Raven",
+    "Viper", "Cobra", "Panther", "Lynx", "Fox", "Bear", "Lion", "Shark"
+  ];
+
+  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+  const randomNumber = Math.floor(Math.random() * 999) + 1;
+
+  return `${randomAdjective}${randomNoun}${randomNumber}`;
+}
+
+// Solo game functions for on-demand play
+export const createSoloGame = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Create questions for the game
+    const questionIds = await Promise.all(
+      triviaQuestions.map((question: TriviaQuestion) => ctx.db.insert("triviaQuestions", question))
+    );
+
+    // Create the game without requiring authentication
+    const gameId = await ctx.db.insert("triviaGames", {
+      status: "in_progress", // Start immediately
+      hostUserId: undefined, // No host for solo games
+      startDateTime: new Date().toISOString(),
+      endDateTime: undefined,
+      currentQuestionIndex: 0,
+      triviaQuestionIds: questionIds,
+      weekNumber: Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)),
+      questionStartedAt: Date.now(),
+      isInReviewPhase: false,
+    });
+
+    // Create anonymous participant with random name
+    await ctx.db.insert("triviaParticipants", {
+      userId: undefined, // Anonymous user
+      gameId: gameId,
+      name: generateAnonymousName(),
+      score: 0,
+      answers: [],
+    });
+
+    return gameId;
+  },
+});
+
+export const submitSoloAnswer = mutation({
+  args: {
+    gameId: v.id("triviaGames"),
+    questionId: v.id("triviaQuestions"),
+    answer: v.string(),
+    timeRemaining: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db.get(args.gameId);
+    if (!game || game.status !== "in_progress") {
+      throw new Error("Game is not in progress");
+    }
+
+    const question = await ctx.db.get(args.questionId);
+    if (!question) {
+      throw new Error("Question not found");
+    }
+
+    // Find the anonymous participant for this game
+    const participant = await ctx.db
+      .query("triviaParticipants")
+      .withIndex("by_game", q => q.eq("gameId", args.gameId))
+      .first();
+
+    if (!participant) {
+      throw new Error("Participant not found");
+    }
+
+    // Check if the answer for this question has already been submitted
+    const existingAnswer = participant.answers.find(a => a.questionId === args.questionId);
+    if (existingAnswer) {
+      return { success: true, pointsEarned: existingAnswer.pointsEarned, message: "Answer already submitted" };
+    }
+
+    const isCorrect = question.correctChoice === args.answer;
+    const pointsEarned = isCorrect ? Math.round(args.timeRemaining) : 0;
+
+    await ctx.db.patch(participant._id, {
+      score: (participant.score || 0) + pointsEarned,
+      answers: [
+        ...(participant.answers || []),
+        {
+          questionId: args.questionId,
+          answerSubmitted: args.answer,
+          timeRemaining: args.timeRemaining,
+          pointsEarned,
+        },
+      ],
+    });
+
+    return { success: true, pointsEarned };
+  },
+});
+
+export const moveToNextSoloQuestion = mutation({
+  args: {
+    gameId: v.id("triviaGames"),
+    showReview: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db.get(args.gameId);
+    if (!game || game.status !== "in_progress") {
+      throw new Error("Game is not in progress");
+    }
+
+    if (args.showReview && !game.isInReviewPhase) {
+      // Move to review phase
+      await ctx.db.patch(args.gameId, {
+        isInReviewPhase: true,
+        questionStartedAt: Date.now(),
+      });
+      return { success: true, reviewPhase: true };
+    }
+
+    // Move to next question or finish game
+    const nextQuestionIndex = game.currentQuestionIndex + 1;
+
+    if (nextQuestionIndex >= game.triviaQuestionIds.length) {
+      await ctx.db.patch(args.gameId, {
+        status: "finished",
+        currentQuestionIndex: nextQuestionIndex - 1
+      });
+      return { gameFinished: true, newQuestionIndex: nextQuestionIndex - 1 };
+    }
+
+    await ctx.db.patch(args.gameId, {
+      currentQuestionIndex: nextQuestionIndex,
+      questionStartedAt: Date.now(),
+      isInReviewPhase: false,
+    });
+
+    return { success: true, newQuestionIndex: nextQuestionIndex };
+  },
+});
+
+export const saveScoreToLeaderboard = mutation({
+  args: {
+    gameId: v.id("triviaGames"),
+    score: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Must be authenticated to save score");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const game = await ctx.db.get(args.gameId);
+    if (!game || game.status !== "finished") {
+      throw new Error("Game not found or not finished");
+    }
+
+    // Find the anonymous participant for this game and update it with user info
+    const anonymousParticipant = await ctx.db
+      .query("triviaParticipants")
+      .withIndex("by_game", (q) => q.eq("gameId", args.gameId))
+      .filter((q) => q.eq(q.field("userId"), undefined))
+      .first();
+
+    if (anonymousParticipant) {
+      // Update the anonymous participant to be the authenticated user
+      await ctx.db.patch(anonymousParticipant._id, {
+        userId: user._id,
+        name: user.name,
+      });
+    } else {
+      // Fallback: create a new participant entry if no anonymous one found
+      await ctx.db.insert("triviaParticipants", {
+        userId: user._id,
+        gameId: args.gameId,
+        name: user.name,
+        score: args.score,
+        answers: [],
+      });
+    }
+
+    return { success: true };
   },
 });
 
