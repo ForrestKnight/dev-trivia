@@ -12,7 +12,7 @@ export default function SoloTriviaGame() {
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [displayTime, setDisplayTime] = useState(10);
+  const [displayTime, setDisplayTime] = useState(20);
   const [gameStarted, setGameStarted] = useState(false);
 
   const createSoloGame = useMutation(api.triviaGames.createSoloGame);
@@ -26,7 +26,7 @@ export default function SoloTriviaGame() {
 
   const calculateTimeLeft = () => {
     if (!gameData?.game?.questionStartedAt) {
-      return 10;
+      return 20;
     }
 
     const elapsed = (Date.now() - gameData.game.questionStartedAt) / 1000;
@@ -35,8 +35,8 @@ export default function SoloTriviaGame() {
       // 3 second review phase
       return Math.max(0, 3 - elapsed);
     } else {
-      // 10 second question phase
-      return Math.max(0, 10 - elapsed);
+      // 20 second question phase
+      return Math.max(0, 20 - elapsed);
     }
   };
 

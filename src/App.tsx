@@ -32,10 +32,13 @@ export default function App() {
         </p>
         <p className="text-xl leading-6 tracking-tight mb-4">
           • 10 multiple-choice questions about programming and computer science<br/>
-          • 10 seconds per question - answer quickly for more points<br/>
+          • 20 seconds per question - answer quickly for more points<br/>
           • No login required to play, but sign in to save your score to the leaderboard<br/>
           • Play as many times as you want, whenever you want!
         </p>
+        <div className="text-xs italic mt-4 mb-4">
+          Dev Trivia used to be a weekly, live trivia game where all players answered the same questions simultaneously every Wednesday at 12pm ET. Thanks for your patience as we transitioned to this new on-demand format! - Forrest
+        </div>
       </div>
       <div className="gap-4 mb-4">
         <div>
