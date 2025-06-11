@@ -5,6 +5,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity';
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../../convex/_generated/api';
+import { CHAT_CONSTANTS } from '../constants';
 
 const matcher = new RegExpMatcher({
   ...englishDataset.build(),
@@ -31,7 +32,7 @@ export const Chat: React.FC = () => {
     if (error) {
       timer = setTimeout(() => {
         setError(null);
-      }, 3000);
+      }, CHAT_CONSTANTS.ERROR_DISPLAY_DURATION);
     }
     return () => {
       if (timer) {
@@ -44,7 +45,7 @@ export const Chat: React.FC = () => {
     if (message.trim() && user) {
       const trimmedMessage = message.trim();
       const matches = matcher.getAllMatches(trimmedMessage);
-      
+
       if (matches.length > 0) {
         setError("Your message contains inappropriate language. Please revise it.");
         return;
@@ -52,13 +53,28 @@ export const Chat: React.FC = () => {
 
       const username = user.username || user.firstName || user.id.slice(0, 8);
 
-      await sendMessage({
-        userId: user.id,
-        username,
-        content: message.trim(),
-      });
-      setMessage('');
+      try {
+        await sendMessage({
+          userId: user.id,
+          username,
+          content: message.trim(),
+        });
+        setMessage('');
+      } catch (error) {
+        console.error("Error sending message:", error);
+        setError("Failed to send message. Please try again.");
+      }
     }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      void handleSendMessage();
+    }
+  };
+
+  const handleSendClick = () => {
+    void handleSendMessage();
   };
 
   const filteredMessages = messages || [];
@@ -86,11 +102,20 @@ export const Chat: React.FC = () => {
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyPress={handleKeyPress}
             placeholder="Type a message..."
             className="flex-grow mr-2"
+            aria-label="Chat message input"
+            maxLength={500}
           />
-          <Button onClick={handleSendMessage} className="text-palette-offwhite border-2 border-palette-offwhite">Send</Button>
+          <Button
+            onClick={handleSendClick}
+            className="text-palette-offwhite border-2 border-palette-offwhite"
+            aria-label="Send message"
+            disabled={!message.trim()}
+          >
+            Send
+          </Button>
         </div>
       </div>
     </div>

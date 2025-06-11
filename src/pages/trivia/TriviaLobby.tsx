@@ -66,10 +66,15 @@ export default function TriviaLobby() {
           await startGame({ gameId: gameId });
           navigate(`/trivia-game/${gameId}`);
         } catch (e) {
+          console.error("Error starting game:", e);
           setError("Failed to start the game. Please try again.");
           setIsStarting(false);
         }
     }
+  };
+
+  const handleStartClick = () => {
+    void handleStartGame();
   };
 
   if (!convexUserId || !userQuery?.user) return <div className="container mx-auto p-8">Loading user data...</div>;
@@ -92,7 +97,12 @@ export default function TriviaLobby() {
         </ul>
       </div>
       {isCreator && (
-        <Button onClick={handleStartGame} className="border-2 border-white text-palette-offWhite text-xl font-bold p-6" disabled={isStarting}>
+        <Button
+          onClick={handleStartClick}
+          className="border-2 border-white text-palette-offWhite text-xl font-bold p-6"
+          disabled={isStarting}
+          aria-label={isStarting ? 'Starting game...' : 'Start trivia game'}
+        >
           {isStarting ? 'Starting...' : 'Start Game'}
         </Button>
       )}
