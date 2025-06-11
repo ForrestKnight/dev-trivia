@@ -14,8 +14,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import "./index.css";
 import ErrorPage from "./pages/ErrorPage";
 import Profile from "./pages/Profile";
-import TriviaGame from "./pages/trivia/TriviaGame";
-import TriviaLobby from "./pages/trivia/TriviaLobby";
+import SoloTriviaGame from "./pages/trivia/SoloTriviaGame";
 import TriviaGameResult from "./pages/trivia/TriviaResult";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -39,23 +38,11 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "trivia-lobby",
-        element: (
-          <AuthRoute>
-            <TriviaLobby />
-          </AuthRoute>
-        ),
+        path: "play",
+        element: <SoloTriviaGame />,
       },
       {
-        path: "trivia-game/:id",
-        element: (
-          <AuthRoute>
-            <TriviaGame />
-          </AuthRoute>
-        ),
-      },
-      {
-        path: "trivia-game/result/:id",
+        path: "result/:id",
         element: <TriviaGameResult />,
       },
     ],

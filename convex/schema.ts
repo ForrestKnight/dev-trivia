@@ -24,7 +24,7 @@ export default defineSchema({
 
   triviaGames: defineTable({
     status: v.string(), // "waiting", "in_progress", "finished"
-    hostUserId: v.id("users"),
+    hostUserId: v.optional(v.id("users")), // Optional for solo games
     startDateTime: v.optional(v.string()),
     endDateTime: v.optional(v.string()),
     currentQuestionIndex: v.number(),
@@ -35,7 +35,7 @@ export default defineSchema({
   }).index("by_status", ["status"]),
 
   triviaParticipants: defineTable({
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")), // Optional for anonymous players
     gameId: v.id("triviaGames"),
     name: v.string(),
     score: v.number(),

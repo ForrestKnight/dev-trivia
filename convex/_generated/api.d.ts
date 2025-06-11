@@ -14,7 +14,6 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
-import type * as chat from "../chat.js";
 import type * as triviaGames from "../triviaGames.js";
 import type * as triviaQuestions from "../triviaQuestions.js";
 import type * as types from "../types.js";
@@ -29,7 +28,6 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  chat: typeof chat;
   triviaGames: typeof triviaGames;
   triviaQuestions: typeof triviaQuestions;
   types: typeof types;
