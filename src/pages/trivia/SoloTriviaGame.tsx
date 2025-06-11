@@ -203,10 +203,10 @@ export default function SoloTriviaGame() {
       </div>
 
       {!gameData?.game?.isInReviewPhase && (
-        <Button 
-          onClick={handleSubmitAnswer} 
+        <Button
+          onClick={handleSubmitAnswer}
           disabled={!selectedAnswer || isAnswerSubmitted}
-          className={`w-full p-6 bg-palette-yellow text-black font-bold text-xl mb-4 ${
+          className={`w-full p-6 bg-palette-yellow text-black font-bold text-xl mb-4 h-auto ${
             !selectedAnswer || isAnswerSubmitted ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >

@@ -71,13 +71,13 @@ export default function TriviaGameResult() {
               <Button
                 onClick={handleSaveScore}
                 disabled={isSaving}
-                className="bg-palette-green text-white font-bold text-xl px-8 py-4 mb-4 hover:bg-palette-green/90"
+                className="bg-palette-green text-white font-bold text-xl px-8 py-4 h-auto mb-4 hover:bg-palette-green/90"
               >
-                {isSaving ? "Saving..." : "💾 Save Score to Leaderboard"}
+                {isSaving ? "Saving..." : "Save Score to Leaderboard"}
               </Button>
             ) : (
               <div className="text-green-500 font-bold text-xl mb-4">
-                ✅ Score saved to leaderboard!
+                Score saved to leaderboard!
               </div>
             )}
           </Authenticated>
@@ -86,8 +86,8 @@ export default function TriviaGameResult() {
             <div className="mb-4">
               <p className="text-lg mb-3">Want to save your score to the leaderboard?</p>
               <SignInButton mode="modal">
-                <Button className="bg-palette-blue text-white font-bold text-xl px-8 py-4 hover:bg-palette-blue/90">
-                  🔐 Sign In to Save Score
+                <Button className="bg-palette-blue text-white font-bold text-xl px-8 py-4 h-auto hover:bg-palette-blue/90">
+                  Sign In to Save Score
                 </Button>
               </SignInButton>
             </div>
@@ -96,8 +96,8 @@ export default function TriviaGameResult() {
 
         <div className="flex gap-4 justify-center">
           <Link to="/play">
-            <Button className="bg-palette-yellow text-black font-bold text-xl px-8 py-4 hover:bg-palette-yellow/90">
-              🔄 Play Again
+            <Button className="bg-palette-yellow text-black font-bold text-xl px-8 py-4 h-auto hover:bg-palette-yellow/90">
+              Play Again
             </Button>
           </Link>
 
@@ -108,7 +108,7 @@ export default function TriviaGameResult() {
               "border-2 border-white text-white text-xl px-8 py-4 h-auto hover:bg-palette-yellow/90"
             )}
           >
-            🏠 Home
+            Home
           </Link>
         </div>
       </div>

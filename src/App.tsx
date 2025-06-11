@@ -21,7 +21,7 @@ export default function App() {
       <div className="mb-6">
         <Link to="/play">
           <Button className="bg-palette-yellow text-black font-bold text-2xl px-8 py-6 hover:bg-palette-yellow/90">
-            🚀 Start Playing Now
+            Start Playing Now
           </Button>
         </Link>
       </div>

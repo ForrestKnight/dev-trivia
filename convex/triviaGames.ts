@@ -385,6 +385,31 @@ export const getMostRecentGameLeaderboard = query({
   },
 });
 
+// Generate random anonymous player names
+function generateAnonymousName(): string {
+  const adjectives = [
+    "Swift", "Clever", "Ninja", "Cyber", "Digital", "Code", "Binary", "Quantum",
+    "Pixel", "Logic", "Stealth", "Turbo", "Elite", "Prime", "Alpha", "Beta",
+    "Gamma", "Delta", "Omega", "Neon", "Chrome", "Shadow", "Ghost", "Phantom",
+    "Mystic", "Cosmic", "Atomic", "Electric", "Magnetic", "Sonic", "Hyper",
+    "Ultra", "Mega", "Super", "Blazing", "Lightning", "Thunder", "Storm"
+  ];
+
+  const nouns = [
+    "Coder", "Hacker", "Developer", "Programmer", "Engineer", "Architect", "Wizard",
+    "Ninja", "Warrior", "Guardian", "Hunter", "Ranger", "Scout", "Agent", "Operative",
+    "Pilot", "Captain", "Commander", "Chief", "Master", "Expert", "Guru", "Sage",
+    "Phoenix", "Dragon", "Tiger", "Wolf", "Eagle", "Falcon", "Hawk", "Raven",
+    "Viper", "Cobra", "Panther", "Lynx", "Fox", "Bear", "Lion", "Shark"
+  ];
+
+  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+  const randomNumber = Math.floor(Math.random() * 999) + 1;
+
+  return `${randomAdjective}${randomNoun}${randomNumber}`;
+}
+
 // Solo game functions for on-demand play
 export const createSoloGame = mutation({
   args: {},
@@ -407,11 +432,11 @@ export const createSoloGame = mutation({
       isInReviewPhase: false,
     });
 
-    // Create anonymous participant
+    // Create anonymous participant with random name
     await ctx.db.insert("triviaParticipants", {
       userId: undefined, // Anonymous user
       gameId: gameId,
-      name: "Anonymous Player",
+      name: generateAnonymousName(),
       score: 0,
       answers: [],
     });
@@ -540,14 +565,29 @@ export const saveScoreToLeaderboard = mutation({
       throw new Error("Game not found or not finished");
     }
 
-    // Create a new participant entry for the authenticated user with their score
-    await ctx.db.insert("triviaParticipants", {
-      userId: user._id,
-      gameId: args.gameId,
-      name: user.name,
-      score: args.score,
-      answers: [], // We don't need to copy the answers for leaderboard purposes
-    });
+    // Find the anonymous participant for this game and update it with user info
+    const anonymousParticipant = await ctx.db
+      .query("triviaParticipants")
+      .withIndex("by_game", (q) => q.eq("gameId", args.gameId))
+      .filter((q) => q.eq(q.field("userId"), undefined))
+      .first();
+
+    if (anonymousParticipant) {
+      // Update the anonymous participant to be the authenticated user
+      await ctx.db.patch(anonymousParticipant._id, {
+        userId: user._id,
+        name: user.name,
+      });
+    } else {
+      // Fallback: create a new participant entry if no anonymous one found
+      await ctx.db.insert("triviaParticipants", {
+        userId: user._id,
+        gameId: args.gameId,
+        name: user.name,
+        score: args.score,
+        answers: [],
+      });
+    }
 
     return { success: true };
   },
