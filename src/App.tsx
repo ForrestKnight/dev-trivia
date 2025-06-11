@@ -2,6 +2,7 @@ import { useQuery } from "convex/react";
 import CountUp from "react-countup";
 import { Link } from "react-router-dom";
 import { api } from "../convex/_generated/api";
+import { Button } from "./components/ui/button";
 
 export default function App() {
   const recentLeaderboard = useQuery(api.triviaGames.getMostRecentGameLeaderboard);
