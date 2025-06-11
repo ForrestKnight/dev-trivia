@@ -1,8 +1,6 @@
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { SignInButton } from "@clerk/clerk-react";
-import { Authenticated, Unauthenticated, useMutation, useQuery } from "convex/react";
-import { useState } from "react";
+import { useQuery } from "convex/react";
 import CountUp from "react-countup";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../../../convex/_generated/api";
@@ -10,31 +8,10 @@ import { Id } from "../../../convex/_generated/dataModel";
 
 export default function TriviaGameResult() {
   const { id } = useParams();
-  const [isSaving, setIsSaving] = useState(false);
-  const [scoreSaved, setScoreSaved] = useState(false);
 
   const gameData = useQuery(api.triviaGames.getTriviaGame, {
     gameId: (id || "") as Id<"triviaGames">,
   });
-
-  const saveScore = useMutation(api.triviaGames.saveScoreToLeaderboard);
-
-  const handleSaveScore = async () => {
-    if (!gameData?.participants?.[0] || isSaving) return;
-
-    setIsSaving(true);
-    try {
-      await saveScore({
-        gameId: gameData.game._id,
-        score: gameData.participants[0].score,
-      });
-      setScoreSaved(true);
-    } catch (error) {
-      console.error("Failed to save score:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   if (!gameData) {
     return (
@@ -66,32 +43,11 @@ export default function TriviaGameResult() {
         </div>
 
         <div className="mb-6">
-          <Authenticated>
-            {!scoreSaved ? (
-              <Button
-                onClick={handleSaveScore}
-                disabled={isSaving}
-                className="bg-palette-green text-white font-bold text-xl px-8 py-4 h-auto mb-4 hover:bg-palette-green/90"
-              >
-                {isSaving ? "Saving..." : "Save Score to Leaderboard"}
-              </Button>
-            ) : (
-              <div className="text-green-500 font-bold text-xl mb-4">
-                Score saved to leaderboard!
-              </div>
-            )}
-          </Authenticated>
-
-          <Unauthenticated>
-            <div className="mb-4">
-              <p className="text-lg mb-3">Want to save your score to the leaderboard?</p>
-              <SignInButton mode="modal">
-                <Button className="bg-palette-blue text-white font-bold text-xl px-8 py-4 h-auto hover:bg-palette-blue/90">
-                  Sign In to Save Score
-                </Button>
-              </SignInButton>
-            </div>
-          </Unauthenticated>
+          <div className="bg-palette-blue/20 text-white p-4 rounded-lg mb-4">
+            <p className="text-lg mb-2">You played as:</p>
+            <p className="text-2xl font-bold text-palette-yellow">{participants[0]?.name}</p>
+            <p className="text-sm mt-2 opacity-80">Look for this name on the leaderboard!</p>
+          </div>
         </div>
 
         <div className="flex gap-4 justify-center">

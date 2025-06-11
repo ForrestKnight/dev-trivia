@@ -381,15 +381,18 @@ export const getMostRecentGameLeaderboard = query({
       return null;
     }
 
-    const leaderboard = finishedGameParticipants
-      .map((participant) => ({
-        name: participant.name,
-        score: participant.score,
-        gameId: participant.gameId,
-      }))
-      .sort((a, b) => b.score - a.score);
+    const leaderboard = await Promise.all(
+      finishedGameParticipants.map(async (participant) => {
+        const user = participant.userId ? await ctx.db.get(participant.userId) : null;
+        return {
+          name: user?.name || participant.name,
+          score: participant.score,
+          gameId: participant.gameId,
+        };
+      })
+    );
 
-    return leaderboard;
+    return leaderboard.sort((a, b) => b.score - a.score);
   },
 });
 
@@ -431,7 +434,7 @@ export const createSoloGame = mutation({
 
     // Shuffle and take 10 questions
     const shuffledQuestions = allQuestions.sort(() => Math.random() - 0.5);
-    const selectedQuestions = shuffledQuestions.slice(0, 10);
+    const selectedQuestions = shuffledQuestions.slice(0, 1);
     const questionIds = selectedQuestions.map(q => q._id);
 
     // Create the game without requiring authentication
@@ -555,58 +558,7 @@ export const moveToNextSoloQuestion = mutation({
   },
 });
 
-export const saveScoreToLeaderboard = mutation({
-  args: {
-    gameId: v.id("triviaGames"),
-    score: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Must be authenticated to save score");
-    }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-      .unique();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const game = await ctx.db.get(args.gameId);
-    if (!game || game.status !== "finished") {
-      throw new Error("Game not found or not finished");
-    }
-
-    // Find the anonymous participant for this game and update it with user info
-    const anonymousParticipant = await ctx.db
-      .query("triviaParticipants")
-      .withIndex("by_game", (q) => q.eq("gameId", args.gameId))
-      .filter((q) => q.eq(q.field("userId"), undefined))
-      .first();
-
-    if (anonymousParticipant) {
-      // Update the anonymous participant to be the authenticated user
-      await ctx.db.patch(anonymousParticipant._id, {
-        userId: user._id,
-        name: user.name,
-      });
-    } else {
-      // Fallback: create a new participant entry if no anonymous one found
-      await ctx.db.insert("triviaParticipants", {
-        userId: user._id,
-        gameId: args.gameId,
-        name: user.name,
-        score: args.score,
-        answers: [],
-      });
-    }
-
-    return { success: true };
-  },
-});
 
 export const getCurrentGame = query({
   args: {},
