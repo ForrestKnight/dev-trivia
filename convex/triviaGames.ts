@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { triviaQuestions } from './triviaQuestions';
-import { TriviaQuestion } from './types';
+
+
 
 // Only Forrest can create a game
 export const createTriviaGame = mutation({
@@ -21,9 +21,17 @@ export const createTriviaGame = mutation({
       throw new Error("Not authorized to create a game");
     }
 
-    const questionIds = await Promise.all(
-      triviaQuestions.map((question: TriviaQuestion) => ctx.db.insert("triviaQuestions", question))
-    );
+    // Get existing questions from the database (randomly select 10)
+    const allQuestions = await ctx.db.query("triviaQuestions").collect();
+
+    if (allQuestions.length === 0) {
+      throw new Error("No questions available in database");
+    }
+
+    // Shuffle and take 10 questions
+    const shuffledQuestions = allQuestions.sort(() => Math.random() - 0.5);
+    const selectedQuestions = shuffledQuestions.slice(0, 10);
+    const questionIds = selectedQuestions.map(q => q._id);
 
     const gameId = await ctx.db.insert("triviaGames", {
       status: "waiting",
@@ -414,10 +422,17 @@ function generateAnonymousName(): string {
 export const createSoloGame = mutation({
   args: {},
   handler: async (ctx) => {
-    // Create questions for the game
-    const questionIds = await Promise.all(
-      triviaQuestions.map((question: TriviaQuestion) => ctx.db.insert("triviaQuestions", question))
-    );
+    // Get existing questions from the database (randomly select 10)
+    const allQuestions = await ctx.db.query("triviaQuestions").collect();
+
+    if (allQuestions.length === 0) {
+      throw new Error("No questions available in database");
+    }
+
+    // Shuffle and take 10 questions
+    const shuffledQuestions = allQuestions.sort(() => Math.random() - 0.5);
+    const selectedQuestions = shuffledQuestions.slice(0, 10);
+    const questionIds = selectedQuestions.map(q => q._id);
 
     // Create the game without requiring authentication
     const gameId = await ctx.db.insert("triviaGames", {
